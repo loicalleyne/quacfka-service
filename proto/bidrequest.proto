@@ -1,0 +1,347 @@
+syntax = "proto3";
+//import "google/protobuf/any.proto";
+
+package com.demo.protoFiles;
+import "google/protobuf/timestamp.proto";
+
+message Bidrequest {
+	
+	string id = 1;
+	repeated Imp imp = 2;
+	Site site = 3;
+	App app = 4;
+	Device device = 5;
+	User user = 6;
+	int32 test = 7;
+	int32 at = 8;
+	int32 tmax = 9;
+	repeated string wseat = 10;
+	repeated string bseat = 11;
+	int32 allimps = 12;
+	repeated string cur = 13;
+	repeated string wlang = 14;
+	repeated string bcat = 15;
+	repeated string badv = 16;
+	repeated string bapp = 17;
+	Source source = 18;
+	Regs regs = 19;
+    google.protobuf.Timestamp timestamp = 20;
+}
+
+message Source {
+
+	int32 fd = 1;
+	string tid = 2;
+	string pchain = 3;
+
+}
+
+message Regs {
+
+	int32 coppa = 1;
+
+}
+
+message Imp {
+
+	string id = 1;
+	repeated Metric metric = 2;
+	Banner banner = 3;
+	Video video = 4;
+	Audio audio = 5;
+	Native native = 6;
+	Pmp pmp = 7;
+	string displaymanager = 8;
+	string displaymanagerver = 9;
+	int32 instl = 10;
+	string tagid = 11;
+	float bidfloor = 12;
+	string bidfloorcur = 13;
+	int32 clickbrowser = 14;
+	int32 secure = 15;
+	repeated string iframebuster = 16;
+	int32 exp = 17;
+
+}
+
+message Metric {
+
+	string type = 1;
+	float value = 2;
+	string vendor = 3;
+
+}
+
+message Banner {
+
+	repeated string format = 1;
+	int32 w = 2;
+	int32 h = 3;
+	repeated int32 btype = 4;
+	repeated int32 battr = 5;
+	int32 pos = 6;
+	repeated string mimes = 7;
+	int32 topframe = 8;
+	repeated int32 expdir = 9;
+	repeated int32 api = 10;
+	string id = 11;
+	int32 vcm = 12;
+
+}
+
+message Video {
+
+	repeated string mimes = 1;
+	int32 minduration = 2;
+	int32 maxduration = 3;
+	repeated int32 protocols = 4;
+	int32 w = 5;
+	int32 h = 6;
+	int32 startdelay = 7;
+	int32 placement = 8;
+	int32 linearity = 9;
+	int32 skip = 10;
+	int32 skipmin = 11;
+	int32 skipafter = 12;
+	int32 sequence = 13;
+	repeated int32 battr = 14;
+	int32 maxextended = 15;
+	int32 minbitrate = 16;
+	int32 maxbitrate = 17;
+	int32 boxingallowed = 18;
+	repeated int32 playbackmethod = 19;
+	int32 playbackend = 20;
+	repeated int32 delivery = 21;
+	int32 pos = 22;
+	repeated Banner companionad = 23;
+	repeated int32 api = 24;
+	repeated int32 companiontype = 25;
+
+}
+
+message Audio {
+
+	repeated string mimes = 1;
+	int32 minduration = 2;
+	int32 maxduration = 3;
+	repeated int32 protocols = 4;
+	int32 startdelay = 5;
+	int32 sequence = 6;
+	repeated int32 battr = 7;
+	int32 maxextended = 8;
+	int32 minbitrate = 9;
+	int32 maxbitrate = 10;
+	repeated int32 delivery = 11;
+	repeated Banner companionad = 12;
+	repeated int32 api = 13;
+	repeated int32 companiontype = 14;
+	int32 maxseq = 15;
+	int32 feed = 16;
+	int32 stitched = 17;
+	int32 nvol = 18;
+
+}
+
+message Native {
+
+	string request = 1;
+	string ver = 2;
+	repeated int32 api = 3;
+	repeated int32 battr = 4;
+
+}
+
+message Format {
+
+	int32 w = 1;
+	int32 h = 2;
+	int32 wratio = 3;
+	int32 hratio = 4;
+	int32 wmin = 5;
+
+}
+
+message Pmp {
+
+	int32 private_auction = 1;
+	repeated Deal deals = 2;
+
+}
+
+message Deal {
+
+	string id = 1;
+	float bidfloor = 2;
+	string bidfloorcur = 3;
+	int32 at = 4;
+	repeated string wseat = 5;
+	repeated string wadomain = 6;
+
+}
+
+message Site {
+
+	string id = 1;
+	string name = 2;
+	string domain = 3;
+	repeated string cat = 4;
+	repeated string sectioncat = 5;
+	repeated string pagecat = 6;
+	string page = 7;
+	string ref = 8;
+	string search = 9;
+	int32 mobile = 10;
+	int32 privacypolicy = 11;
+	Publisher publisher = 12;
+	Content content = 13;
+	string keywords = 14;
+
+}
+
+message App {
+
+	string id = 1;
+	string name = 2;
+	string bundle = 3;
+	string domain = 4;
+	string storeurl = 5;
+	repeated string cat = 6;
+	repeated string sectioncat = 7;
+	repeated string pagecat = 8;
+	string ver = 9;
+	int32 privacypolicy = 10;
+	int32 paid = 11;
+	Publisher publisher = 12;
+	Content content = 13;
+	string keywords = 14;
+
+}
+
+message Publisher {
+
+	string id = 1;
+	string name = 2;
+	repeated string cat = 3;
+	string domain = 4;
+
+}
+
+message Content {
+
+	string id = 1;
+	int32 episode = 2;
+	string title = 3;
+	string series = 4;
+	string season = 5;
+	string artist = 6;
+	string genre = 7;
+	string album = 8;
+	string isrc = 9;
+	Producer producer = 10;
+	string url = 11;
+	repeated string cat = 12;
+	int32 prodq = 13;
+	int32 context = 14;
+	string contentrating = 15;
+	string userrating = 16;
+	int32 qagmediarating = 17;
+	string keywords = 18;
+	int32 livestream = 19;
+	int32 sourcerelationship = 20;
+	int32 len = 21;
+	string language = 22;
+	int32 embeddable = 23;
+	repeated Data data = 24;
+
+}
+
+message Producer {
+
+	string id = 1;
+	string name = 2;
+	repeated string cat = 3;
+	string domain = 4;
+
+}
+
+message Device {
+
+	string ua = 1;
+	Geo geo = 2;
+	int32 dnt = 3;
+	int32 lmt = 4;
+	string ip = 5;
+	string ipv6 = 6;
+	int32 devicetype = 7;
+	string make = 8;
+	string model = 9;
+	string os = 10;
+	string osv = 11;
+	string hwv = 12;
+	int32 h = 13;
+	int32 w = 14;
+	int32 ppi = 15;
+	float pxratio = 16;
+	int32 js = 17;
+	int32 geofetch = 18;
+	string flashver = 19;
+	string language = 20;
+	string carrier = 21;
+	string mccmnc = 22;
+	int32 connectiontype = 23;
+	string ifa = 24;
+	string didsha1 = 25;
+	string didmd5 = 26;
+	string dpidsha1 = 27;
+	string dpidmd5 = 28;
+	string macsha1 = 29;
+	string macmd5 = 30;
+
+}
+
+message Geo {
+
+	float lat = 1;
+	float lon = 2;
+	int32 type = 3;
+	int32 accuracy = 4;
+	int32 lastfix = 5;
+	int32 ipservice = 6;
+	string country = 7;
+	string region = 8;
+	string regionfips104 = 9;
+	string metro = 10;
+	string city = 11;
+	string zip = 12;
+	int32 utcoffset = 13;
+
+}
+
+message User {
+
+	string id = 1;
+	string buyeruid = 2;
+	int32 yob = 3;
+	string gender = 4;
+	string keywords = 5;
+	string customdata = 6;
+	Geo geo = 7;
+	repeated Data data = 8;
+
+}
+
+message Data {
+
+	string id = 1;
+	string name = 2;
+	repeated Segment segment = 3;
+
+}
+
+message Segment {
+
+	string id = 1;
+	string name = 2;
+	string value = 3;
+
+}

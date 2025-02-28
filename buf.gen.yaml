@@ -1,0 +1,18 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: quacfka-service/gen
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen
+    opt: paths=source_relative
+  - remote: buf.build/community/planetscale-vtprotobuf:v0.6.0
+    out: gen
+    opt:
+      - paths=source_relative
+      - features=marshal+unmarshal+size+pool+unmarshal_unsafe
+      - pool=quacfka-service/gen.Bidrequest
+inputs:
+  - directory: proto/
