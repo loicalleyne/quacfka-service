@@ -12,7 +12,6 @@ import (
 	"github.com/loicalleyne/quacfka-runner/rpc"
 
 	rr "github.com/loicalleyne/quacfka-service/gen"
-	"github.com/yassinebenaid/godump"
 
 	"github.com/apache/arrow-go/v18/arrow/array"
 	q "github.com/loicalleyne/quacfka"
@@ -131,7 +130,6 @@ func main() {
 		driverPath = h + "\\Downloads\\libduckdb-windows-amd64\\duckdb.dll"
 	default:
 	}
-	godump.Dump(driverPath)
 
 	// partition query
 	partitionQuery := `select
