@@ -1,12 +1,12 @@
 BINARY_NAME=quacfka-service
 LDFLAGS="-s -w"
 build:
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build \
+	CGO_ENABLED=1 GOARCH=amd64 GOOS=linux go build \
 		-o ${BINARY_NAME} \
 		-ldflags=${LDFLAGS}
 
 run: 
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build \
+	CGO_ENABLED=1 GOARCH=amd64 GOOS=linux go build \
 		-o ${BINARY_NAME} \
 		-ldflags=${LDFLAGS}
 	./${BINARY_NAME}
