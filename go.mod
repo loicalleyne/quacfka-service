@@ -3,6 +3,7 @@ module github.com/loicalleyne/quacfka-service
 go 1.24.0
 
 require (
+	github.com/TFMV/filewalker v0.0.0-20250224073810-b5e8b71e02ff
 	github.com/apache/arrow-go/v18 v18.1.1-0.20250116162745-f533d2066dee
 	github.com/joho/godotenv v1.5.1
 	github.com/loicalleyne/bufarrow v0.5.0
@@ -10,7 +11,6 @@ require (
 	github.com/loicalleyne/quacfka-runner v0.0.0-20250228200710-f6526a254eb8
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/valyala/gorpc v0.0.0-20160519171614-908281bef774
-	github.com/yassinebenaid/godump v0.11.1
 	google.golang.org/protobuf v1.36.5
 )
 
@@ -26,7 +26,7 @@ require (
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
-	github.com/loicalleyne/couac v0.5.1 // indirect
+	github.com/loicalleyne/couac v0.5.2 // indirect
 	github.com/loicalleyne/protorand v0.0.0-20250201052828-ef9589bb5a9a // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
@@ -37,6 +37,8 @@ require (
 	github.com/twmb/franz-go/pkg/kmsg v1.9.0 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/net v0.34.0 // indirect

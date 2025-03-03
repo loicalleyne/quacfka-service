@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io/fs"
 	"path/filepath"
 
 	"runtime"
@@ -24,10 +25,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/valyala/gorpc"
-
+	"github.com/TFMV/filewalker"
 	"github.com/joho/godotenv"
 	"github.com/loicalleyne/bufarrow"
+	"github.com/valyala/gorpc"
 )
 
 var (
@@ -47,6 +48,7 @@ var (
 	maxProcs        = flag.Int("mp", runtime.NumCPU(), "GOMAXPROCS")
 	verbose         = flag.Bool("verbose", false, "verbose logging")
 	parquetPath     = flag.String("pp", "../parquet", "path to parquet folder, without trailing slash")
+	timeout         = flag.Int("t", 0, "timeout")
 )
 
 func main() {
@@ -82,6 +84,111 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 		defer log.Printf("program ended\nto view profile run 'go tool pprof -http localhost:8080 %s'\n", strings.TrimSuffix(filepath.Base(*cpuprofile), filepath.Ext(*cpuprofile))+filepath.Ext(*cpuprofile))
+	}
+
+	// RPC Client setup
+	// partition query
+	partitionQuery := `select
+			datepart('year', epoch_ms(timestamp.seconds * 1000))::STRING as year,
+			datepart('month', epoch_ms(timestamp.seconds * 1000))::STRING as month,
+			datepart('day', epoch_ms(timestamp.seconds * 1000))::STRING as day,
+			datepart('hour', epoch_ms(timestamp.seconds * 1000))::STRING as hour
+		from bidreq
+		group by all
+		ORDER BY 1,2,3,4`
+	// export_raw.sql
+	rawQuery := `COPY (
+		SELECT *
+		FROM bidreq
+		WHERE
+		datepart('year', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{year}}
+		and datepart('month', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{month}}
+		and datepart('day', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{day}}
+		and datepart('hour', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{hour}} ) TO '{{exportpath}}/{{logname}}/{{queryname}}/year={{year}}/month={{month}}/day={{day}}/hour={{hour}}/bidreq_raw_{{rand}}.parquet' (format PARQUET, compression zstd, ROW_GROUP_SIZE_BYTES 100_000_000, OVERWRITE_OR_IGNORE)`
+	hourlyRequestsAggQuery := `COPY (
+			select
+			datetrunc('day', epoch_ms(event_time*1000))::DATE date,
+			extract('hour' FROM epoch_ms(event_time*1000)) as hour,
+			bidreq_norm.pub_id,
+			bidreq_norm.device_id,
+			CONCAT(width::string, 'x', height::string) resolution,
+			deal,
+			count(distinct bidreq_id) requests,
+			from bidreq_norm
+			where
+			datepart('year', epoch_ms(event_time * 1000)) = {{year}}
+			and datepart('month', epoch_ms(event_time * 1000)) = {{month}}
+			and datepart('day', epoch_ms(event_time * 1000)) = {{day}}
+			and datepart('hour', epoch_ms(event_time * 1000)) = {{hour}}
+			group by all)
+			TO '{{exportpath}}/{{logname}}/{{queryname}}/year={{year}}/month={{month}}/day={{day}}/hour={{hour}}/bidreq_hourly_requests_agg_{{rand}}.parquet' (format PARQUET, compression zstd, ROW_GROUP_SIZE_BYTES 100_000_000, OVERWRITE_OR_IGNORE)`
+	logName := "ortb.bid-requests"
+	queries := []string{rawQuery, hourlyRequestsAggQuery}
+	queriesNames := []string{"raw", "hourly_requests_agg"}
+	execQueries := []string{"SET threads = 32", "SET allocator_background_threads = true"}
+	execQueriesNames := []string{"", ""}
+	gorpc.RegisterType(rpc.Request{})
+	gorpc.RegisterType(rpc.Response{})
+
+	addr = "./gorpc-sock.unix"
+	client := gorpc.NewUnixClient(addr)
+	client.Start()
+
+	// Clean up any orphan DBs first
+	var opt filewalker.WalkOptions
+	opt.Filter = filewalker.FilterOptions{
+		IncludeTypes: []string{".db"},
+	}
+	opt.Filter.ModifiedBefore = time.Now().Add(-5 * time.Second)
+	err = filewalker.WalkLimitWithOptions(context.Background(), "./", func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		if filepath.Ext(info.Name()) == ".db" && time.Since(info.ModTime()) > (5*time.Second) {
+			path, err := filepath.Abs(path)
+			if err != nil {
+				log.Printf("path error: %v\n", err)
+			}
+			resp, err := client.Call(rpc.Request{
+				Type:             rpc.REQUEST_VALIDATE,
+				Path:             path,
+				ExportPath:       *parquetPath,
+				LogName:          logName,
+				ExecQueries:      execQueries,
+				ExecQueriesNames: execQueriesNames,
+				PartitionQuery:   partitionQuery,
+				Queries:          queries,
+				QueriesNames:     queriesNames,
+			})
+			if err != nil {
+				log.Printf(" runner request issue: %v\n", err)
+			} else {
+				req := resp.(rpc.Response).Request
+				req.Type = rpc.REQUEST_RUN
+				err = client.Send(req)
+				if err != nil {
+					log.Printf("rpc send error: %v\n", err)
+				}
+			}
+			d := 0
+			for i := 0; i <= 60; i++ {
+				c, _ := dbFileCount("./")
+				if c > 3 {
+					delay := time.NewTimer(1 * time.Second)
+					<-delay.C
+					d++
+				} else {
+					if d > 0 {
+						log.Printf("delayed by %d sec\n", d)
+					}
+					break
+				}
+			}
+		}
+		return nil
+	}, opt)
+	if err != nil {
+		log.Printf("error: %v\n", err)
 	}
 
 	// Defining normalizer fields and aliases - must match
@@ -131,53 +238,6 @@ func main() {
 	default:
 	}
 
-	// partition query
-	partitionQuery := `select
-			datepart('year', epoch_ms(timestamp.seconds * 1000))::STRING as year,
-			datepart('month', epoch_ms(timestamp.seconds * 1000))::STRING as month,
-			datepart('day', epoch_ms(timestamp.seconds * 1000))::STRING as day,
-			datepart('hour', epoch_ms(timestamp.seconds * 1000))::STRING as hour
-		from bidreq
-		group by all
-		ORDER BY 1,2,3,4`
-	// export_raw.sql
-	rawQuery := `COPY (
-		SELECT *
-		FROM bidreq
-		WHERE
-		datepart('year', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{year}}
-		and datepart('month', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{month}}
-		and datepart('day', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{day}}
-		and datepart('hour', epoch_ms(((timestamp.seconds * 1000) + (timestamp.nanos/1000000))::BIGINT)) = {{hour}} ) TO '{{exportpath}}/{{logname}}/{{queryname}}/year={{year}}/month={{month}}/day={{day}}/hour={{hour}}/bidreq_raw_{{rand}}.parquet' (format PARQUET, compression zstd, ROW_GROUP_SIZE_BYTES 100_000_000, OVERWRITE_OR_IGNORE)`
-	hourlyRequestsAggQuery := `COPY (
-			select
-			datetrunc('day', epoch_ms(event_time*1000))::DATE date,
-			extract('hour' FROM epoch_ms(event_time*1000)) as hour,
-			bidreq_norm.pub_id,
-			bidreq_norm.device_id,
-			CONCAT(width::string, 'x', height::string) resolution,
-			deal,
-			count(distinct bidreq_id) requests,
-			from bidreq_norm
-			where
-			datepart('year', epoch_ms(event_time * 1000)) = {{year}}
-			and datepart('month', epoch_ms(event_time * 1000)) = {{month}}
-			and datepart('day', epoch_ms(event_time * 1000)) = {{day}}
-			and datepart('hour', epoch_ms(event_time * 1000)) = {{hour}}
-			group by all)
-			TO '{{exportpath}}/{{logname}}/{{queryname}}/year={{year}}/month={{month}}/day={{day}}/hour={{hour}}/bidreq_hourly_requests_agg_{{rand}}.parquet' (format PARQUET, compression zstd, ROW_GROUP_SIZE_BYTES 100_000_000, OVERWRITE_OR_IGNORE)`
-	logName := "ortb.bid-requests"
-	queries := []string{rawQuery, hourlyRequestsAggQuery}
-	queriesNames := []string{"raw", "hourly_requests_agg"}
-	execQueries := []string{"SET threads = 32", "SET allocator_background_threads = true"}
-	execQueriesNames := []string{"", ""}
-	gorpc.RegisterType(rpc.Request{})
-	gorpc.RegisterType(rpc.Response{})
-
-	addr = "./gorpc-sock.unix"
-	client := gorpc.NewUnixClient(addr)
-	client.Start()
-
 	err = o.ConfigureDuck(q.WithPathPrefix("bidreq"), q.WithDriverPath(driverPath), q.WithDestinationTable("bidreq"), q.WithDuckConnections(*duckRoutines))
 
 	if err != nil {
@@ -186,9 +246,14 @@ func main() {
 	var wg sync.WaitGroup
 	ctx_, ctxCancelFunc := context.WithCancel(context.Background())
 	ctrlC(ctxCancelFunc, o, metricsFile)
-
-	wg.Add(1)
-	go o.Run(ctx_, &wg)
+	if *timeout != 0 {
+		ctxT, _ := context.WithTimeout(ctx_, time.Duration(*timeout)*time.Second)
+		wg.Add(1)
+		go o.Run(ctxT, &wg)
+	} else {
+		wg.Add(1)
+		go o.Run(ctx_, &wg)
+	}
 
 	wg.Add(1)
 	go func() {

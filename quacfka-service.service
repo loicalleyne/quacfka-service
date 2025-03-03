@@ -1,0 +1,14 @@
+[Unit]
+Description=
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/bin/quacfka-service
+ExecStart=/usr/local/bin/quacfka-service/quacfka-service
+TimeoutStopSec=300
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
