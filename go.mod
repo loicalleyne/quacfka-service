@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/TFMV/filewalker v0.0.0-20250224073810-b5e8b71e02ff
-	github.com/apache/arrow-go/v18 v18.2.0-rc0
+	github.com/apache/arrow-go/v18 v18.2.0-rc1
 	github.com/joho/godotenv v1.5.1
 	github.com/loicalleyne/bufarrow v0.5.0
 	github.com/loicalleyne/quacfka v0.5.8
@@ -42,10 +42,10 @@ require (
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250207221924-e9438ea467c6 // indirect
-	google.golang.org/grpc v1.70.0 // indirect
+	google.golang.org/grpc v1.71.0 // indirect
 )
