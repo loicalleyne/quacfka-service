@@ -7,7 +7,7 @@ require (
 	github.com/apache/arrow-go/v18 v18.2.0-rc0
 	github.com/joho/godotenv v1.5.1
 	github.com/loicalleyne/bufarrow v0.5.0
-	github.com/loicalleyne/quacfka v0.5.8
+	github.com/loicalleyne/quacfka v0.5.9
 	github.com/loicalleyne/quacfka-runner v0.0.0-20250228200710-f6526a254eb8
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/valyala/gorpc v0.0.0-20160519171614-908281bef774
@@ -29,7 +29,7 @@ require (
 	github.com/loicalleyne/protorand v0.0.0-20250201052828-ef9589bb5a9a // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
-	github.com/panjf2000/ants/v2 v2.11.1 // indirect
+	github.com/panjf2000/ants/v2 v2.11.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/twmb/franz-go v1.18.1 // indirect
