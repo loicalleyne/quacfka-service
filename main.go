@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"flag"
 	"io/fs"
 	"path/filepath"
@@ -194,7 +195,10 @@ func main() {
 	// Defining normalizer fields and aliases - must match
 	normFields := []string{"id", "site.id", "site.publisher.id", "timestamp.seconds", "imp[0].banner.w", "imp[0].banner.h", "imp[0].pmp.deals.id"}
 	normAliases := []string{"bidreq_id", "device_id", "pub_id", "event_time", "width", "height", "deal"}
-	o, err = q.NewOrchestrator[*rr.Bidrequest](q.WithFileRotateThresholdMB(int64(*duckSize)), q.WithNormalizer(normFields, normAliases, false), q.WithDuckPathsChan(3))
+	// Defining custom fields
+	cf := []q.CustomField{{Name: "event_tm", Type: q.INT64, FieldCardinality: q.Optional, IsPacked: false}}
+
+	o, err = q.NewOrchestrator[*rr.Bidrequest](q.WithFileRotateThresholdMB(int64(*duckSize)), q.WithCustomFields(cf), q.WithNormalizer(normFields, normAliases, false), q.WithDuckPathsChan(3))
 
 	if err != nil {
 		panic(err)
@@ -215,6 +219,8 @@ func main() {
 	k.Seeds = append(k.Seeds, os.Getenv("KAFKA_SEED"))
 	k.User = os.Getenv("KAFKA_USER")
 	k.Password = os.Getenv("KAFKA_PW")
+	// Use this to have the Kafka reader append the message timestamp in epoch milliseconds as 8 bytes at the end of the message
+	k.MsgTimeAppend = true
 	// Use this if consuming from topic produced by Confluence client as it prefixes messages with 6 magic bytes
 	k.Munger = q.WithMessageCutConfluencePrefix
 	k.Topic = os.Getenv("KAFKA_TOPIC")
@@ -313,7 +319,9 @@ func main() {
 
 func customProtoUnmarshal(m []byte, s any) error {
 	newMessage := rr.BidrequestFromVTPool()
-	err := newMessage.UnmarshalVTUnsafe(m)
+	b := m[len(m)-8:]
+	event_tm := int64(binary.LittleEndian.Uint64(b))
+	err := newMessage.UnmarshalVTUnsafe(m[:len(m)-8])
 	if err != nil {
 		return err
 	}
@@ -362,7 +370,7 @@ func customProtoUnmarshal(m []byte, s any) error {
 	}
 
 	// Assert s to `*bufarrow.Schema[*your.CustomProtoMessageType]`
-	s.(*bufarrow.Schema[*rr.Bidrequest]).Append(newMessage)
+	err = s.(*bufarrow.Schema[*rr.Bidrequest]).AppendWithCustom(newMessage, event_tm)
 	newMessage.ReturnToVTPool()
 	return nil
 }

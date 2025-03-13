@@ -1,6 +1,7 @@
 Quacfka-Service 🏹🦆
 ===================
 High throughput streaming of Protobuf data from Kafka into DuckDB
+Read about its initial development on my guest post on the Apache Arrow [blog](https://arrow.apache.org/blog/2025/03/10/fast-streaming-inserts-in-duckdb-with-adbc/).
 
 Uses generics. Use your protobuf message as a type parameter to autogenerate an Arrow schema, provide a protobuf unmarshaling func, and stream data into DuckDB with a very high throughput.
 If using file rotation should be run alongside [Quacfka-Runner](https://github.com/loicalleyne/quacfka-runner).
