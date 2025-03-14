@@ -59,7 +59,7 @@ func main() {
 	godotenv.Load()
 	numCPUs := runtime.NumCPU()
 	log.Printf("CPU count: %d\n", numCPUs)
-
+	// Metrics recorded to help tune workloads
 	metricsFile, err := os.OpenFile("metrics.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
@@ -73,8 +73,9 @@ func main() {
 		metricsFile.Sync()
 		metricsFile.Close()
 	}()
+	// CPU profiling
 	if *cpuprofile != "" {
-		log.Printf("profiling to %s\n", strings.TrimSuffix(filepath.Base(*cpuprofile), filepath.Ext(*cpuprofile))+"_"+filepath.Ext(*cpuprofile))
+		log.Printf("profiling to %s\n", strings.TrimSuffix(filepath.Base(*cpuprofile), filepath.Ext(*cpuprofile))+filepath.Ext(*cpuprofile))
 		f, err := os.Create(strings.TrimSuffix(filepath.Base(*cpuprofile), filepath.Ext(*cpuprofile)) + filepath.Ext(*cpuprofile))
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
@@ -87,7 +88,6 @@ func main() {
 		defer log.Printf("program ended\nto view profile run 'go tool pprof -http localhost:8080 %s'\n", strings.TrimSuffix(filepath.Base(*cpuprofile), filepath.Ext(*cpuprofile))+filepath.Ext(*cpuprofile))
 	}
 
-	// RPC Client setup
 	// partition query
 	partitionQuery := `select
 			datepart('year', epoch_ms(timestamp.seconds * 1000))::STRING as year,
@@ -128,6 +128,8 @@ func main() {
 	queriesNames := []string{"raw", "hourly_requests_agg"}
 	execQueries := []string{"SET threads = 32", "SET allocator_background_threads = true"}
 	execQueriesNames := []string{"", ""}
+
+	// RPC Client setup
 	gorpc.RegisterType(rpc.Request{})
 	gorpc.RegisterType(rpc.Response{})
 
@@ -197,8 +199,12 @@ func main() {
 	normAliases := []string{"bidreq_id", "device_id", "pub_id", "event_time", "width", "height", "deal"}
 	// Defining custom fields
 	cf := []q.CustomField{{Name: "event_tm", Type: q.INT64, FieldCardinality: q.Optional, IsPacked: false}}
-
-	o, err = q.NewOrchestrator[*rr.Bidrequest](q.WithFileRotateThresholdMB(int64(*duckSize)), q.WithCustomFields(cf), q.WithNormalizer(normFields, normAliases, false), q.WithDuckPathsChan(3))
+	// Creating quacfka.Orchestrator
+	o, err = q.NewOrchestrator[*rr.Bidrequest](
+		q.WithFileRotateThresholdMB(int64(*duckSize)),
+		q.WithCustomFields(cf),
+		q.WithNormalizer(normFields, normAliases, false),
+		q.WithDuckPathsChan(3))
 
 	if err != nil {
 		panic(err)
@@ -244,7 +250,10 @@ func main() {
 	default:
 	}
 
-	err = o.ConfigureDuck(q.WithPathPrefix("bidreq"), q.WithDriverPath(driverPath), q.WithDestinationTable("bidreq"), q.WithDuckConnections(*duckRoutines))
+	err = o.ConfigureDuck(q.WithPathPrefix("bidreq"),
+		q.WithDriverPath(driverPath),
+		q.WithDestinationTable("bidreq"),
+		q.WithDuckConnections(*duckRoutines))
 
 	if err != nil {
 		panic(err)
@@ -319,18 +328,21 @@ func main() {
 
 func customProtoUnmarshal(m []byte, s any) error {
 	newMessage := rr.BidrequestFromVTPool()
+	// Extract the 8 byte Unix Milliseconds Kafka message timestamp from the end of the message bytes.
 	b := m[len(m)-8:]
 	event_tm := int64(binary.LittleEndian.Uint64(b))
+	// Unmarshal the proto.Message from the message bytes without the timestamp bytes.
 	err := newMessage.UnmarshalVTUnsafe(m[:len(m)-8])
 	if err != nil {
 		return err
 	}
+	// Normalizer is for building a flat-schema Arrow record. Unnesting the data at the message
+	// deserialization level is much better for cache locality, and insertion and aggregation querying
+	// of flat data is much faster.
 	rb := s.(*bufarrow.Schema[*rr.Bidrequest]).NormalizerBuilder()
 	if rb != nil {
 		b := rb.Fields()
 		if b != nil {
-			// messageDescriptor := newMessage.ProtoReflect().Descriptor()
-			// rootFields := messageDescriptor.Fields()
 			id := newMessage.GetId()
 			deviceID := coalesceStringFunc(newMessage.GetUser().GetId, newMessage.GetSite().GetId, newMessage.GetDevice().GetIfa)
 			publisherID := newMessage.GetSite().GetPublisher().GetId()
@@ -371,10 +383,15 @@ func customProtoUnmarshal(m []byte, s any) error {
 
 	// Assert s to `*bufarrow.Schema[*your.CustomProtoMessageType]`
 	err = s.(*bufarrow.Schema[*rr.Bidrequest]).AppendWithCustom(newMessage, event_tm)
+	if err != nil {
+		log.Printf("append error: %v\n", err)
+	}
 	newMessage.ReturnToVTPool()
 	return nil
 }
 
+// dbFileCount counts the number of database files in the path.
+// Used for back pressure with quacfka-runner.
 func dbFileCount(path string) (int, error) {
 	i := 0
 	files, err := os.ReadDir(path)

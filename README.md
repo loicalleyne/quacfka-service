@@ -6,8 +6,8 @@ Read about its initial development on my guest post on the Apache Arrow [blog](h
 Uses generics. Use your protobuf message as a type parameter to autogenerate an Arrow schema, provide a protobuf unmarshaling func, and stream data into DuckDB with a very high throughput.
 If using file rotation should be run alongside [Quacfka-Runner](https://github.com/loicalleyne/quacfka-runner).
 
-See [quacfka] documentation for API usage details.
-[![Go Reference](https://pkg.go.dev/badge/github.com/loicalleyne/quacfka.svg)](https://pkg.go.dev/github.com/loicalleyne/quacfka)
+See [![Go Reference](https://pkg.go.dev/badge/github.com/loicalleyne/quacfka.svg)](https://pkg.go.dev/github.com/loicalleyne/quacfka) documentation for API usage details.
+
 
 ## Usage
 ### Code generation for Protobuf
@@ -159,6 +159,65 @@ Put the message type as the type parameter for the Quacfka Orchestrator.
 			}
 		}
 	}()
+```
+
+### Deserializer/Normalizer function example
+```go
+func customProtoUnmarshal(m []byte, s any) error {
+	newMessage := rr.BidrequestFromVTPool()
+	b := m[len(m)-8:]
+	event_tm := int64(binary.LittleEndian.Uint64(b))
+	err := newMessage.UnmarshalVTUnsafe(m[:len(m)-8])
+	if err != nil {
+		return err
+	}
+	rb := s.(*bufarrow.Schema[*rr.Bidrequest]).NormalizerBuilder()
+	if rb != nil {
+		b := rb.Fields()
+		if b != nil {
+			id := newMessage.GetId()
+			deviceID := coalesceStringFunc(newMessage.GetUser().GetId, newMessage.GetSite().GetId, newMessage.GetDevice().GetIfa)
+			publisherID := newMessage.GetSite().GetPublisher().GetId()
+			timestampSeconds := newMessage.GetTimestamp().GetSeconds()
+			timestampNanos := newMessage.GetTimestamp().GetNanos()
+			var width, height int32
+			if newMessage.GetImp()[0].GetBanner() != nil {
+				width = newMessage.GetImp()[0].GetBanner().GetW()
+			} else {
+				width = newMessage.GetImp()[0].GetVideo().GetW()
+			}
+			if newMessage.GetImp()[0].GetBanner() != nil {
+				height = newMessage.GetImp()[0].GetBanner().GetH()
+			} else {
+				height = newMessage.GetImp()[0].GetVideo().GetH()
+			}
+			if len(newMessage.GetImp()[0].GetPmp().GetDeals()) == 0 {
+				b[0].(*array.StringBuilder).Append(id)
+				b[1].(*array.StringBuilder).Append(deviceID)
+				b[2].(*array.StringBuilder).Append(publisherID)
+				b[4].(*array.Int64Builder).Append(timestampSeconds + int64(timestampNanos/1000000000))
+				b[5].(*array.Uint32Builder).Append(uint32(width))
+				b[6].(*array.Uint32Builder).Append(uint32(height))
+				b[7].(*array.StringBuilder).AppendNull()
+			}
+			// var deals []string = make([]string, len(newMessage.GetImp()[0].GetPmp().GetDeals()))
+			for i := 0; i < len(newMessage.GetImp()[0].GetPmp().GetDeals()); i++ {
+				b[0].(*array.StringBuilder).Append(id)
+				b[1].(*array.StringBuilder).Append(deviceID)
+				b[2].(*array.StringBuilder).Append(publisherID)
+				b[4].(*array.Int64Builder).Append(timestampSeconds + int64(timestampNanos/1000000000))
+				b[5].(*array.Uint32Builder).Append(uint32(width))
+				b[6].(*array.Uint32Builder).Append(uint32(height))
+				b[7].(*array.StringBuilder).Append(newMessage.GetImp()[0].GetPmp().GetDeals()[i].GetId())
+			}
+		}
+	}
+
+	// Assert s to `*bufarrow.Schema[*your.CustomProtoMessageType]`
+	err = s.(*bufarrow.Schema[*rr.Bidrequest]).AppendWithCustom(newMessage, event_tm)
+	newMessage.ReturnToVTPool()
+	return nil
+}
 ```
 
 ### Run it 🚀
