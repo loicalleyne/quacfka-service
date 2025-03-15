@@ -52,8 +52,8 @@ github.com/loicalleyne/couac v0.5.2 h1:++2AXKYur9/cmQMQWxXdjsmTHMUs7WDwJourGlUgW
 github.com/loicalleyne/couac v0.5.2/go.mod h1:QNw/G/YVYkdr9RRNwdlxPY6S8UIfg9aM4UjZXhvyvSQ=
 github.com/loicalleyne/protorand v0.0.0-20250201052828-ef9589bb5a9a h1:k+qx2PGZDvrgPxHObjzbHlu9cJJWuscU1/nYk4S3/4Q=
 github.com/loicalleyne/protorand v0.0.0-20250201052828-ef9589bb5a9a/go.mod h1:sUGcVJlBsqTSmuYhsS1J8SrgYoBD/l0eWv5metMQKeY=
-github.com/loicalleyne/quacfka v0.5.10 h1:DfvoeviHiM4DPSOjPcSxMrr5gVoCD7e2QUDS34puD/U=
-github.com/loicalleyne/quacfka v0.5.10/go.mod h1:1Ys2GukUnT6SqXAM3KzDHRahSpTbyYj7/WfLTOEdTsA=
+github.com/loicalleyne/quacfka v0.5.13 h1:D7qyd2ohbJPdDk2lgyAeQCD68jB+Dg5bNMFZQHaaAT4=
+github.com/loicalleyne/quacfka v0.5.13/go.mod h1:LblHzNe+m79V62MCY+aY+sbtvVifWBxlkYeUf6z4nDE=
 github.com/loicalleyne/quacfka-runner v0.0.0-20250228200710-f6526a254eb8 h1:zGwXo3KA40DJjYyjw5AcPoORHbjWZ55A/0oE1rTA8x4=
 github.com/loicalleyne/quacfka-runner v0.0.0-20250228200710-f6526a254eb8/go.mod h1:Btzs8lmo/S/XpdhZe8nl2NI2z+NDmSzTPn0jm5BBUSI=
 github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 h1:AMFGa4R4MiIpspGNG7Z948v4n35fFGB3RR3G/ry4FWs=
