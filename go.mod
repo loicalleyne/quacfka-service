@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/TFMV/filewalker v0.0.0-20250224073810-b5e8b71e02ff
-	github.com/apache/arrow-go/v18 v18.2.0-rc1
+	github.com/apache/arrow-go/v18 v18.2.0
 	github.com/joho/godotenv v1.5.1
 	github.com/loicalleyne/bufarrow v0.5.1
 	github.com/loicalleyne/quacfka v0.5.13
