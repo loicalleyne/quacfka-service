@@ -8,7 +8,7 @@ require (
 	github.com/TFMV/filewalker v0.0.0-20250224073810-b5e8b71e02ff
 	github.com/apache/arrow-go/v18 v18.3.1
 	github.com/joho/godotenv v1.5.1
-	github.com/loicalleyne/bufarrow v0.5.1
+	github.com/loicalleyne/bufarrow v0.5.2
 	github.com/loicalleyne/quacfka v0.5.14
 	github.com/loicalleyne/quacfka-runner v0.0.0-20250228200710-f6526a254eb8
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
