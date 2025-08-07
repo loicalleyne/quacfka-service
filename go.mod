@@ -13,7 +13,7 @@ require (
 	github.com/loicalleyne/quacfka-runner v0.0.0-20250228200710-f6526a254eb8
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/valyala/gorpc v0.0.0-20160519171614-908281bef774
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.7
 )
 
 require (
